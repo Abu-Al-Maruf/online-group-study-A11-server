@@ -6,7 +6,12 @@ require("dotenv").config();
 const port = process.env.PORT || 5000;
 
 // midlleware
-app.use(cors());
+app.use(
+  cors({
+    origin: ["http://localhost:5173"],
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.mrrlkes.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -25,7 +30,16 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
-    
+    const assignmentCollection = client
+      .db("groupStudy")
+      .collection("assignments");
+
+    // create assignment
+    app.post("/api/v1/user/create-assignment", async (req, res) => {
+      const info = req.body;
+      const result = await assignmentCollection.insertOne(info);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
