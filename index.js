@@ -50,7 +50,17 @@ async function run() {
     // delete assignment
     app.delete("/api/v1/user/delete-assignment/:id", async (req, res) => {
       const id = req.params.id;
+      const queryEmail = req.query.email;
       const query = { _id: new ObjectId(id) };
+      const findAssignment = await assignmentCollection.findOne(query);
+      const dbEmail = findAssignment.email;
+
+      if (queryEmail !== dbEmail) {
+        return res.status(401).send({
+          message: "You are not authorized to delete this assignment",
+        });
+      }
+
       const result = await assignmentCollection.deleteOne(query);
       res.send(result);
     });
