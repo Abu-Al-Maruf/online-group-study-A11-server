@@ -1,5 +1,5 @@
 const express = require("express");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const cors = require("cors");
 require("dotenv").config();
@@ -34,10 +34,24 @@ async function run() {
       .db("groupStudy")
       .collection("assignments");
 
+    // get assignments
+    app.get("/api/v1/assignmnets", async (req, res) => {
+      const result = await assignmentCollection.find().toArray();
+      res.send(result);
+    });
+
     // create assignment
     app.post("/api/v1/user/create-assignment", async (req, res) => {
       const info = req.body;
       const result = await assignmentCollection.insertOne(info);
+      res.send(result);
+    });
+
+    // delete assignment
+    app.delete("/api/v1/user/delete-assignment/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await assignmentCollection.deleteOne(query);
       res.send(result);
     });
 
