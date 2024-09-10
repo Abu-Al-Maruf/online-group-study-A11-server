@@ -28,15 +28,24 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const assignmentCollection = client
       .db("groupStudy")
       .collection("assignments");
 
     // get assignments
-    app.get("/api/v1/assignmnets", async (req, res) => {
+    app.get("/api/v1/assignments", async (req, res) => {
       const result = await assignmentCollection.find().toArray();
+      res.send(result);
+    });
+
+    // get a specific assignments
+    app.get("/api/v1/assignments/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await assignmentCollection.findOne(query);
+      console.log(result);
       res.send(result);
     });
 
@@ -62,6 +71,34 @@ async function run() {
       }
 
       const result = await assignmentCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    // update assignment
+    app.put("/api/v1/user/update-assignment/:id", async (req, res) => {
+      const id = req.params.id;
+      const assignment = req.body;
+      const query = { _id: new ObjectId(id) };
+      const findAssignment = await assignmentCollection.findOne(query);
+      const dbEmail = findAssignment.email;
+      const queryEmail = req.query.email;
+      if (queryEmail !== dbEmail) {
+        return res.status(401).send({
+          message: "You are not authorized to update this assignment",
+        });
+      }
+
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          ...assignment,
+        },
+      };
+      const result = await assignmentCollection.updateOne(
+        query,
+        updateDoc,
+        options
+      );
       res.send(result);
     });
 
