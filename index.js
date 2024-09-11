@@ -37,9 +37,14 @@ async function run() {
       .db("groupStudy")
       .collection("submitted_assignment");
 
-    // get assignments
+    // get all assignments
     app.get("/api/v1/assignments", async (req, res) => {
       const result = await assignmentCollection.find().toArray();
+      res.send(result);
+    });
+    // get all submited assignments
+    app.get("/api/v1/user/submitted-assignments", async (req, res) => {
+      const result = await submittedAssignmentCollection.find().toArray();
       res.send(result);
     });
 
@@ -103,6 +108,26 @@ async function run() {
         },
       };
       const result = await assignmentCollection.updateOne(
+        query,
+        updateDoc,
+        options
+      );
+      res.send(result);
+    });
+    // update submitted assignment
+    app.put("/api/v1/user/submitted-assignment/:id", async (req, res) => {
+      const id = req.params.id;
+      const assignment = req.body;
+      const query = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          obtainMarks: assignment.obtainMarks,
+          feedback: assignment.feedback,
+          status: assignment.status,
+        },
+      };
+      const result = await submittedAssignmentCollection.updateOne(
         query,
         updateDoc,
         options
