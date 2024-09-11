@@ -33,6 +33,9 @@ async function run() {
     const assignmentCollection = client
       .db("groupStudy")
       .collection("assignments");
+    const submittedAssignmentCollection = client
+      .db("groupStudy")
+      .collection("submitted_assignment");
 
     // get assignments
     app.get("/api/v1/assignments", async (req, res) => {
@@ -45,14 +48,19 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await assignmentCollection.findOne(query);
-      console.log(result);
       res.send(result);
     });
 
     // create assignment
     app.post("/api/v1/user/create-assignment", async (req, res) => {
-      const info = req.body;
-      const result = await assignmentCollection.insertOne(info);
+      const assignment = req.body;
+      const result = await assignmentCollection.insertOne(assignment);
+      res.send(result);
+    });
+    // submit assignment
+    app.post("/api/v1/user/submitted_assignment", async (req, res) => {
+      const assignment = req.body;
+      const result = await submittedAssignmentCollection.insertOne(assignment);
       res.send(result);
     });
 
