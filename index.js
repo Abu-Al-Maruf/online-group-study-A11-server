@@ -44,7 +44,17 @@ async function run() {
     });
     // get all submited assignments
     app.get("/api/v1/user/submitted-assignments", async (req, res) => {
-      const result = await submittedAssignmentCollection.find().toArray();
+      const email = req.query.email;
+      const status = req.query.status;
+      let query = {};
+      if (email) {
+        query.userEmail = email;
+      }
+      if (status) {
+        query.status = status;
+      }
+
+      const result = await submittedAssignmentCollection.find(query).toArray();
       res.send(result);
     });
 
