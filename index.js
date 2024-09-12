@@ -69,6 +69,10 @@ async function run() {
         })
         .send({ success: true });
     });
+    // clear cookie after logout
+    app.post("/api/v1/logout", async (req, res) => {
+      res.clearCookie("token", { maxAge: 0 }).send({ success: true });
+    });
 
     // get all assignments
     app.get("/api/v1/assignments", async (req, res) => {
