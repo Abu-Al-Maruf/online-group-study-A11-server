@@ -1,5 +1,7 @@
 const express = require("express");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
 const app = express();
 const cors = require("cors");
 require("dotenv").config();
@@ -13,6 +15,24 @@ app.use(
   })
 );
 app.use(express.json());
+app.use(cookieParser());
+// middleware for verify token
+
+const verifyToken = (req, res, next) => {
+  const { token } = req.cookies;
+  if (!token) {
+    return res.status(401).send({ message: "unauthorize access" });
+  }
+
+  jwt.verify(token, process.env.SECRET_TOKEN, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: "unauthorize no access" });
+    }
+
+    req.user = decoded;
+    next();
+  });
+};
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.mrrlkes.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -37,22 +57,51 @@ async function run() {
       .db("groupStudy")
       .collection("submitted_assignment");
 
+    //  jwt token related api
+    app.post("/api/v1/jwt", (req, res) => {
+      const email = req.body;
+      const token = jwt.sign(email, process.env.SECRET_TOKEN);
+      res
+        .cookie("token", token, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "none",
+        })
+        .send({ success: true });
+    });
+
     // get all assignments
     app.get("/api/v1/assignments", async (req, res) => {
       const result = await assignmentCollection.find().toArray();
       res.send(result);
     });
     // get all submited assignments
-    app.get("/api/v1/user/submitted-assignments", async (req, res) => {
-      const email = req.query.email;
-      const status = req.query.status;
-      let query = {};
-      if (email) {
-        query.userEmail = email;
+    app.get(
+      "/api/v1/user/submitted-assignments",
+      verifyToken,
+      async (req, res) => {
+        const status = req.query?.status;
+        let query = {};
+        if (status) {
+          query.status = status;
+        }
+
+        const result = await submittedAssignmentCollection
+          .find(query)
+          .toArray();
+        res.send(result);
       }
-      if (status) {
-        query.status = status;
+    );
+    // get my submited assignments
+    app.get("/api/v1/user/my-assignments", verifyToken, async (req, res) => {
+      const email = req.query?.email;
+      const tokenEmail = req.user?.email;
+
+      if (email !== tokenEmail) {
+        return res.status(403).send({ message: "forbidden access" });
       }
+
+      const query = { userEmail: email };
 
       const result = await submittedAssignmentCollection.find(query).toArray();
       res.send(result);
