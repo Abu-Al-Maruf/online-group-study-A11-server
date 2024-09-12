@@ -76,9 +76,27 @@ async function run() {
 
     // get all assignments
     app.get("/api/v1/assignments", async (req, res) => {
-      const result = await assignmentCollection.find().toArray();
-      res.send(result);
+      // pagination
+      const page = Number(req.query.page);
+      const limit = Number(req.query.limit);
+      const skip = (page - 1) * limit;
+      const difficultyLevel = req.query.difficulty;
+
+      let query = {};
+      if (difficultyLevel) {
+        query.difficultyLevel = difficultyLevel;
+      }
+
+      // total count for pagination
+      const count = await assignmentCollection.countDocuments();
+      const result = await assignmentCollection
+        .find(query)
+        .skip(skip)
+        .limit(limit)
+        .toArray();
+      res.send({ result, count });
     });
+
     // get all submited assignments
     app.get(
       "/api/v1/user/submitted-assignments",
